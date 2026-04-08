@@ -56,3 +56,7 @@ desktop.ini
 htmlcov/
 .coverage
 .pytest_cache/
+
+src/models/c.py 
+src/models/ready_or_not_dols_analysis.ipynb
+src/models/ready_or_not_analysis.ipynb
