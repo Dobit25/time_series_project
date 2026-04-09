@@ -217,13 +217,14 @@ def train_ols_model(
     target_col: str,
     model_name: str,
 ) -> RegressionResultsWrapper:
-    """Huấn luyện một mô hình OLS với robust standard errors (HC3).
+    """Huấn luyện một mô hình OLS với robust standard errors (HAC).
 
     Bước thực hiện:
         1. Thêm hằng số (intercept) bằng sm.add_constant().
         2. Fit mô hình OLS CHỈ trên tập Train.
-        3. Sử dụng cov_type='HC3' để xử lý phương sai sai số thay đổi
-           (heteroscedasticity-robust).
+        3. Sử dụng cov_type='HAC' (Newey-West) để xử lý đồng thời:
+           - Phương sai sai số thay đổi (heteroscedasticity)
+           - Tự tương quan phần dư (autocorrelation) — DW < 1.5
 
     Args:
         train_df: Tập Train.
@@ -262,9 +263,11 @@ def train_ols_model(
         X_train: pd.DataFrame = sm.add_constant(train_df[feature_cols])
         y_train: pd.Series = train_df[target_col]
 
-        # Fit OLS với HC3 robust standard errors
+        # Fit OLS với HAC (Newey-West) robust standard errors
+        # maxlags=7 để xử lý tự tương quan do chu kỳ tuần trong dữ liệu game
         model: RegressionResultsWrapper = sm.OLS(y_train, X_train).fit(
-            cov_type="HC3"
+            cov_type="HAC",
+            cov_kwds={"maxlags": 7},
         )
 
         logger.info(
