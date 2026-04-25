@@ -209,7 +209,7 @@ def save_train_test(
 
 
 # ==============================================================================
-# 4. Huấn luyện mô hình Dynamic OLS với HC3
+# 4. Huấn luyện mô hình Dynamic OLS với HAC
 # ==============================================================================
 def train_ols_model(
     train_df: pd.DataFrame,
