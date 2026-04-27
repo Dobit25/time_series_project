@@ -69,16 +69,19 @@ def clean_and_engineer_features(
     df['Is_Major_Update'] = 0
     df['Is_Minor_Update'] = 0
     upd_work = update_df.copy()
-    upd_work['Date'] = pd.to_datetime(upd_work['Date'], dayfirst=True, errors='coerce').dt.normalize()
+    upd_work['Date'] = pd.to_datetime(upd_work['Date'], errors='coerce').dt.normalize()
     
     for _, row in upd_work.iterrows():
         u_date = row['Date']
         if pd.isna(u_date): continue
-        sig = str(row.get('Significance', '')).strip().upper()
-        if sig in ['VERY HIGH', 'HIGH']:
+        
+        is_major = row.get('Is_Major_Update', 0)
+        is_minor = row.get('Is_Minor_Update', 0)
+        
+        if is_major == 1:
             end_d = u_date + timedelta(days=7)
             df.loc[(df.index >= u_date) & (df.index <= end_d), 'Is_Major_Update'] = 1
-        elif sig == 'MEDIUM':
+        elif is_minor == 1:
             end_d = u_date + timedelta(days=3)
             df.loc[(df.index >= u_date) & (df.index <= end_d), 'Is_Minor_Update'] = 1
 
@@ -101,18 +104,25 @@ def clean_and_engineer_features(
     return df[[c for c in cols_to_keep if c in df.columns]].copy()
 
 def main():
-    RAW_DIR = "/home/honganh/OOD/ts/time_series_project/data/raw/"
-    PROCESSED_DIR = "/home/honganh/OOD/ts/time_series_project/data/processed/"
+    import os
+    # Thay thế đường dẫn cứng (hardcoded Linux path) bằng đường dẫn tương đối
+    PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+    RAW_DIR = os.path.join(PROJECT_ROOT, "data", "raw")
+    PROCESSED_DIR = os.path.join(PROJECT_ROOT, "data", "processed")
     os.makedirs(PROCESSED_DIR, exist_ok=True)
     
     games = {
         "EldenRing": {
-            "base": "EldenRing_Cleaned.csv", "trend": "EldenRing_trend.csv",
-            "upd": "eldenring_upd.csv", "twitch": "elden_ring_twitch.csv"
+            "base": "EldenRing_Cleaned.csv",
+            "trend": "EldenRing_trend_daily.csv",
+            "upd": "EldenRing_update_status.csv",
+            "twitch": "elden_ring_twitch.csv"
         },
         "ReadyOrNot": {
-            "base": "ReadyorNot_Cleaned.csv", "trend": "ReadyOrNot_trend.csv",
-            "upd": "readyupdate.csv", "twitch": "ready_or_not_twitch.csv"
+            "base": "ReadyorNot_Cleaned.csv",
+            "trend": "ReadyOrNot_trend_daily.csv",
+            "upd": "ReadyOrNot_update_status.csv",
+            "twitch": "ready_or_not_twitch.csv"
         }
     }
 
@@ -126,7 +136,7 @@ def main():
             tw = pd.read_csv(tw_path)
             
             final_df = clean_and_engineer_features(game, b, t, tw, u)
-            out_path = os.path.join(PROCESSED_DIR, f"{game}_Final_Merged.csv")
+            out_path = os.path.join(PROCESSED_DIR, f"{game}_Final_Merged_1.csv")
             final_df.to_csv(out_path)
             print(f"SUCCESS: Saved {len(final_df)} rows to {out_path}\n")
         except Exception as e:
